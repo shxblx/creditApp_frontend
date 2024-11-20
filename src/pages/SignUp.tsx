@@ -1,10 +1,12 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Wallet, Eye, EyeOff } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { signup } from "../api/user";
 import { useDispatch } from "react-redux";
 import { setUserInfo } from "@/redux/slices/userSlice";
 import toast from "react-hot-toast";
+import { useSelector } from "react-redux";
+import { RootState } from "@/redux/store/store";
 
 const SignUp = () => {
   const [formData, setFormData] = useState({
@@ -15,6 +17,18 @@ const SignUp = () => {
   });
   const dispatch = useDispatch();
   const navigate = useNavigate();
+  const userInfo = useSelector((state: RootState) => state.userInfo.userInfo);
+  const adminInfo = useSelector(
+    (state: RootState) => state.adminInfo?.adminInfo
+  );
+
+  useEffect(() => {
+    if (adminInfo) {
+      navigate("/dashboard");
+    } else if (userInfo) {
+      navigate("/mainhome");
+    }
+  }, [adminInfo, userInfo, navigate]);
 
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);

@@ -25,6 +25,7 @@ import { adminLogout } from "@/api/user";
 import { useDispatch } from "react-redux";
 import { removeAdminInfo } from "@/redux/slices/adminSlice";
 import toast from "react-hot-toast";
+import { useLocation, useNavigate } from "react-router-dom";
 
 interface NavbarSidebarProps {
   children: ReactNode;
@@ -33,30 +34,53 @@ interface NavbarSidebarProps {
 interface SidebarItem {
   icon: ReactNode;
   text: string;
+  path: string;
 }
 
 const NavbarSidebar: React.FC<NavbarSidebarProps> = ({ children }) => {
   const [isSidebarOpen, setSidebarOpen] = useState<boolean>(true);
   const [isProfileDropdownOpen, setProfileDropdownOpen] =
     useState<boolean>(false);
+  const location = useLocation();
+  const navigate = useNavigate();
 
   const sidebarItems: SidebarItem[] = [
-    { icon: <DollarSign size={20} />, text: "Dashboard" },
-    { icon: <Users size={20} />, text: "Borrowers" },
-    { icon: <DollarSign size={20} />, text: "Loans" },
-    { icon: <RefreshCw size={20} />, text: "Repayments" },
-    { icon: <Settings size={20} />, text: "Loan Parameters" },
-    { icon: <DollarSign size={20} />, text: "Accounting" },
-    { icon: <Shield size={20} />, text: "Collateral" },
-    { icon: <Key size={20} />, text: "Access Configuration" },
-    { icon: <PiggyBank size={20} />, text: "Savings" },
-    { icon: <Briefcase size={20} />, text: "Other Incomes" },
-    { icon: <Receipt size={20} />, text: "Payroll" },
-    { icon: <CircleDollarSign size={20} />, text: "Expenses" },
-    { icon: <FileText size={20} />, text: "E-Signature" },
-    { icon: <DollarSign size={20} />, text: "Member Accounts" },
-    { icon: <Calendar size={20} />, text: "Calendar" },
-    { icon: <Settings size={20} />, text: "Settings" },
+    { icon: <DollarSign size={20} />, text: "Dashboard", path: "/dashboard" },
+    { icon: <Users size={20} />, text: "Borrowers", path: "/dashboard" },
+    { icon: <DollarSign size={20} />, text: "Loans", path: "/dashboard" },
+    { icon: <RefreshCw size={20} />, text: "Repayments", path: "/dashboard" },
+    {
+      icon: <Settings size={20} />,
+      text: "Loan Parameters",
+      path: "/dashboard",
+    },
+    { icon: <DollarSign size={20} />, text: "Accounting", path: "/dashboard" },
+    { icon: <Shield size={20} />, text: "Collateral", path: "/dashboard" },
+    {
+      icon: <Key size={20} />,
+      text: "Access Configuration",
+      path: "/dashboard",
+    },
+    { icon: <PiggyBank size={20} />, text: "Savings", path: "/dashboard" },
+    {
+      icon: <Briefcase size={20} />,
+      text: "Other Incomes",
+      path: "/dashboard",
+    },
+    { icon: <Receipt size={20} />, text: "Payroll", path: "/dashboard" },
+    {
+      icon: <CircleDollarSign size={20} />,
+      text: "Expenses",
+      path: "/dashboard",
+    },
+    { icon: <FileText size={20} />, text: "E-Signature", path: "/dashboard" },
+    {
+      icon: <DollarSign size={20} />,
+      text: "Member Accounts",
+      path: "/dashboard",
+    },
+    { icon: <Calendar size={20} />, text: "Calendar", path: "/dashboard" },
+    { icon: <Settings size={20} />, text: "Settings", path: "/dashboard" },
   ];
   const dispatch = useDispatch();
   const toggleSidebar = () => {
@@ -66,6 +90,10 @@ const NavbarSidebar: React.FC<NavbarSidebarProps> = ({ children }) => {
     await adminLogout();
     dispatch(removeAdminInfo());
     toast.success("Admin Logout Success");
+  };
+
+  const handleNavigation = (path: string) => {
+    navigate(path);
   };
 
   return (
@@ -101,14 +129,16 @@ const NavbarSidebar: React.FC<NavbarSidebarProps> = ({ children }) => {
         {/* Navigation Items */}
         <nav className="mt-4 flex-1 overflow-y-auto scrollbar-hide">
           {sidebarItems.map((item, index) => (
-            <a
+            <button
               key={index}
-              href="#"
-              className="flex items-center px-4 py-3 text-gray-300 hover:bg-[#1a6e54] hover:text-white transition-colors"
+              onClick={() => handleNavigation(item.path)}
+              className={`w-full flex items-center px-4 py-3 text-gray-300 hover:bg-[#1a6e54] hover:text-white transition-colors ${
+                location.pathname === item.path ? "bg-[#1a6e54] text-white" : ""
+              }`}
             >
               {item.icon}
               <span className="ml-3">{item.text}</span>
-            </a>
+            </button>
           ))}
         </nav>
 

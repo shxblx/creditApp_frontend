@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Wallet, Eye, EyeOff } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { login } from "@/api/user";
@@ -6,6 +6,8 @@ import { useDispatch } from "react-redux";
 import { setUserInfo } from "@/redux/slices/userSlice";
 import toast from "react-hot-toast";
 import { setAdminInfo } from "@/redux/slices/adminSlice";
+import { useSelector } from "react-redux";
+import { RootState } from "@/redux/store/store";
 
 const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
@@ -13,6 +15,19 @@ const Login = () => {
   const [password, setPassword] = useState("");
   const dispatch = useDispatch();
   const navigate = useNavigate();
+  const userInfo = useSelector((state: RootState) => state.userInfo.userInfo);
+  const adminInfo = useSelector(
+    (state: RootState) => state.adminInfo?.adminInfo
+  );
+
+  // Redirect if already logged in
+  useEffect(() => {
+    if (adminInfo) {
+      navigate("/dashboard");
+    } else if (userInfo) {
+      navigate("/mainhome");
+    }
+  }, [adminInfo, userInfo, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -31,12 +46,13 @@ const Login = () => {
       dispatch(
         setUserInfo({
           user: "User",
+          userId: response.data.userId,
         })
       );
       navigate("/mainhome");
-      toast.success(response.data);
+      toast.success(response.data.message);
     } else {
-      toast.error(response.data);
+      toast.error(response.data.message);
     }
   };
 

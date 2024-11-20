@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Bell,
   MessageSquare,
@@ -7,65 +7,110 @@ import {
   DollarSign,
   CircleDollarSign,
   Wallet,
+  Eye,
 } from "lucide-react";
-import { logout } from "@/api/user";
 import { useDispatch } from "react-redux";
+import { useSelector } from "react-redux";
+import { RootState } from "@/redux/store/store";
 import { removeUserInfo } from "@/redux/slices/userSlice";
+import { logout, fetchLoan } from "@/api/user";
 import toast from "react-hot-toast";
+import ApplyLoanModal from "@/components/ApplyLoanModal";
+
+interface Loan {
+  _id: string;
+  fullName: string;
+  loanAmount: string;
+  loanTenure: string;
+  employmentStatus: string;
+  employmentAddress: string;
+  reasonForLoan: string;
+  loanStatus: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+interface ModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  children: React.ReactNode;
+  title: string;
+}
+
+const Modal: React.FC<ModalProps> = ({ isOpen, onClose, children, title }) => {
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 z-50 overflow-y-auto">
+      <div className="flex min-h-screen items-center justify-center px-4">
+        <div
+          className="fixed inset-0 bg-black bg-opacity-50"
+          onClick={onClose}
+        ></div>
+        <div className="relative bg-white rounded-lg w-full max-w-md p-6">
+          <div className="mb-4">
+            <h3 className="text-lg font-semibold">{title}</h3>
+          </div>
+          {children}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const formatToINR = (amount: string) => {
+  const numAmount = parseFloat(amount);
+  return new Intl.NumberFormat("en-IN", {
+    style: "currency",
+    currency: "INR",
+    maximumFractionDigits: 0,
+  }).format(numAmount);
+};
 
 const MainHome = () => {
   const [amount] = useState("0.0");
   const [showDropdown, setShowDropdown] = useState(false);
+  const [isApplyLoanModalOpen, setIsApplyLoanModalOpen] = useState(false);
+  const [loans, setLoans] = useState<Loan[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedLoan, setSelectedLoan] = useState<Loan | null>(null);
+  const [showLoanDetails, setShowLoanDetails] = useState(false);
+
   const dispatch = useDispatch();
+  const userInfo = useSelector((state: RootState) => state.userInfo.userInfo);
 
-  const mockLoans = [
-    {
-      officer: "John Deon",
-      amount: 50000.0,
-      date: "June 09, 2021",
-      status: "Funded",
-    },
-    {
-      officer: "John Deon",
-      amount: 100000.0,
-      date: "June 07, 2021",
-      status: "Pending",
-    },
-    {
-      officer: "John Deon",
-      amount: 150000.0,
-      date: "June 07, 2021",
-      status: "Rejected",
-    },
-    {
-      officer: "John Deon",
-      amount: 100000.0,
-      date: "May 17, 2021",
-      status: "Disbursed",
-    },
-    {
-      officer: "John Deon",
-      amount: 75000.0,
-      date: "May 15, 2021",
-      status: "Pending",
-    },
-    {
-      officer: "John Deon",
-      amount: 125000.0,
-      date: "May 10, 2021",
-      status: "Funded",
-    },
-  ];
+  useEffect(() => {
+    const loadLoans = async () => {
+      try {
+        setIsLoading(true);
+        if (userInfo?.userId) {
+          const response = await fetchLoan(userInfo.userId);
+          setLoans(
+            Array.isArray(response.data.loans) ? response.data.loans : []
+          );
+        }
+      } catch (error) {
+        console.error("Error fetching loans:", error);
+        toast.error("Failed to fetch loans");
+        setLoans([]);
+      } finally {
+        setIsLoading(false);
+      }
+    };
 
-  const getStatusColor = (status: any) => {
-    switch (status) {
-      case "Funded":
-        return "bg-yellow-500";
-      case "Pending":
+    loadLoans();
+  }, [userInfo?.userId]);
+
+  const getStatusColor = (status: string) => {
+    switch (status.toLowerCase()) {
+      case "approved":
         return "bg-green-500";
-      case "Rejected":
+      case "pending":
+        return "bg-yellow-500";
+      case "rejected":
         return "bg-red-500";
-      case "Disbursed":
+      case "disbursed":
         return "bg-blue-500";
       default:
         return "bg-gray-500";
@@ -73,11 +118,38 @@ const MainHome = () => {
   };
 
   const handleLogout = async () => {
-    await logout();
-
-    dispatch(removeUserInfo());
-    toast.success("Logout Success");
+    try {
+      await logout();
+      dispatch(removeUserInfo());
+      toast.success("Logout Success");
+    } catch (error) {
+      console.error("Logout error:", error);
+      toast.error("Logout failed");
+    }
   };
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString("en-IN", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+    });
+  };
+
+  const filteredLoans = loans.filter(
+    (loan) =>
+      loan.fullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      loan.loanAmount.includes(searchTerm) ||
+      loan.loanStatus.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  useEffect(() => {
+    if (showDropdown) {
+      const handleClickOutside = () => setShowDropdown(false);
+      document.addEventListener("click", handleClickOutside);
+      return () => document.removeEventListener("click", handleClickOutside);
+    }
+  }, [showDropdown]);
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -119,7 +191,10 @@ const MainHome = () => {
               <MessageSquare className="h-5 w-5 text-[#1A4D2E] cursor-pointer" />
               <div className="relative">
                 <button
-                  onClick={() => setShowDropdown(!showDropdown)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setShowDropdown(!showDropdown);
+                  }}
                   className="focus:outline-none"
                 >
                   <User className="h-5 w-5 text-[#1A4D2E] cursor-pointer" />
@@ -150,11 +225,14 @@ const MainHome = () => {
             <div>
               <div className="flex items-center space-x-2">
                 <DollarSign className="h-6 w-6 text-[#1A4D2E]" />
-                <span className="text-xl font-bold">{amount}</span>
+                <span className="text-xl font-bold">{formatToINR(amount)}</span>
               </div>
               <p className="text-gray-600 text-sm mt-1">Current Balance</p>
             </div>
-            <button className="bg-[#1A4D2E] text-white px-3 py-1.5 rounded-md hover:bg-[#153d25] transition-colors text-sm">
+            <button
+              onClick={() => setIsApplyLoanModalOpen(true)}
+              className="bg-[#1A4D2E] text-white px-3 py-1.5 rounded-md hover:bg-[#153d25] transition-colors text-sm"
+            >
               Get a Loan
             </button>
           </div>
@@ -181,6 +259,8 @@ const MainHome = () => {
           <input
             type="text"
             placeholder="Search for loans"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
             className="w-full pl-9 pr-4 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#1A4D2E]"
           />
           <Search className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
@@ -194,62 +274,159 @@ const MainHome = () => {
             </h2>
           </div>
           <div className="overflow-y-auto max-h-[calc(100vh-380px)]">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50 sticky top-0">
-                <tr>
-                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Loan Officer
-                  </th>
-                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Amount
-                  </th>
-                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Date Applied
-                  </th>
-                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Status
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {mockLoans.map((loan, index) => (
-                  <tr key={index}>
-                    <td className="px-4 py-2 whitespace-nowrap">
-                      <div className="flex items-center">
-                        <div className="h-8 w-8 rounded-full bg-gray-200 flex items-center justify-center">
-                          <User className="h-4 w-4 text-gray-500" />
-                        </div>
-                        <div className="ml-3">
-                          <div className="text-sm font-medium text-gray-900">
-                            {loan.officer}
+            {isLoading ? (
+              <div className="flex justify-center items-center py-8">
+                <div className="text-gray-500">Loading loans...</div>
+              </div>
+            ) : filteredLoans.length === 0 ? (
+              <div className="flex justify-center items-center py-8">
+                <div className="text-gray-500">No loans found</div>
+              </div>
+            ) : (
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50 sticky top-0">
+                  <tr>
+                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Full Name
+                    </th>
+                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Amount
+                    </th>
+                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Date Applied
+                    </th>
+                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Status
+                    </th>
+                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Actions
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {filteredLoans.map((loan) => (
+                    <tr key={loan._id}>
+                      <td className="px-4 py-2 whitespace-nowrap">
+                        <div className="flex items-center">
+                          <div className="h-8 w-8 rounded-full bg-gray-200 flex items-center justify-center">
+                            <User className="h-4 w-4 text-gray-500" />
+                          </div>
+                          <div className="ml-3">
+                            <div className="text-sm font-medium text-gray-900">
+                              {loan.fullName}
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    </td>
-                    <td className="px-4 py-2 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">
-                        ${loan.amount.toLocaleString()}
-                      </div>
-                    </td>
-                    <td className="px-4 py-2 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">{loan.date}</div>
-                    </td>
-                    <td className="px-4 py-2 whitespace-nowrap">
-                      <span
-                        className={`px-2 py-1 inline-flex text-xs leading-4 font-semibold rounded-full text-white ${getStatusColor(
-                          loan.status
-                        )}`}
-                      >
-                        {loan.status}
-                      </span>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+                      </td>
+                      <td className="px-4 py-2 whitespace-nowrap">
+                        <div className="text-sm text-gray-900">
+                          {formatToINR(loan.loanAmount)}
+                        </div>
+                      </td>
+                      <td className="px-4 py-2 whitespace-nowrap">
+                        <div className="text-sm text-gray-900">
+                          {formatDate(loan.createdAt)}
+                        </div>
+                      </td>
+                      <td className="px-4 py-2 whitespace-nowrap">
+                        <span
+                          className={`px-2 py-1 inline-flex text-xs leading-4 font-semibold rounded-full text-white ${getStatusColor(
+                            loan.loanStatus
+                          )}`}
+                        >
+                          {loan.loanStatus}
+                        </span>
+                      </td>
+                      <td className="px-4 py-2 whitespace-nowrap">
+                        <button
+                          onClick={() => {
+                            setSelectedLoan(loan);
+                            setShowLoanDetails(true);
+                          }}
+                          className="flex items-center text-blue-600 hover:text-blue-800"
+                        >
+                          <Eye className="h-4 w-4 mr-1" />
+                          View
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
           </div>
         </div>
       </div>
+
+      {/* Apply Loan Modal */}
+      <ApplyLoanModal
+        isOpen={isApplyLoanModalOpen}
+        onClose={() => setIsApplyLoanModalOpen(false)}
+      />
+
+      {/* Loan Details Modal */}
+      <Modal
+        isOpen={showLoanDetails}
+        onClose={() => setShowLoanDetails(false)}
+        title="Loan Details"
+      >
+        {selectedLoan && (
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <p className="text-sm font-medium text-gray-500">Full Name</p>
+                <p className="mt-1">{selectedLoan.fullName}</p>
+              </div>
+              <div>
+                <p className="text-sm font-medium text-gray-500">Loan Amount</p>
+                <p className="mt-1">{formatToINR(selectedLoan.loanAmount)}</p>
+              </div>
+              <div>
+                <p className="text-sm font-medium text-gray-500">Loan Tenure</p>
+                <p className="mt-1">{selectedLoan.loanTenure} months</p>
+              </div>
+              <div>
+                <p className="text-sm font-medium text-gray-500">Status</p>
+                <span
+                  className={`mt-1 px-2 py-1 inline-flex text-xs leading-4 font-semibold rounded-full text-white ${getStatusColor(
+                    selectedLoan.loanStatus
+                  )}`}
+                >
+                  {selectedLoan.loanStatus}
+                </span>
+              </div>
+              <div>
+                <p className="text-sm font-medium text-gray-500">
+                  Employment Status
+                </p>
+                <p className="mt-1">{selectedLoan.employmentStatus}</p>
+              </div>
+              <div className="col-span-2">
+                <p className="text-sm font-medium text-gray-500">
+                  Employment Address
+                </p>
+                <p className="mt-1">{selectedLoan.employmentAddress}</p>
+              </div>
+              <div className="col-span-2">
+                <p className="text-sm font-medium text-gray-500">
+                  Reason for Loan
+                </p>
+                <p className="mt-1">{selectedLoan.reasonForLoan}</p>
+              </div>
+              <div>
+                <p className="text-sm font-medium text-gray-500">Applied On</p>
+                <p className="mt-1">{formatDate(selectedLoan.createdAt)}</p>
+              </div>
+              <div>
+                <p className="text-sm font-medium text-gray-500">
+                  Last Updated
+                </p>
+                <p className="mt-1">{formatDate(selectedLoan.updatedAt)}</p>
+              </div>
+            </div>
+          </div>
+        )}
+      </Modal>
     </div>
   );
 };
