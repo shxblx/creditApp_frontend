@@ -1,33 +1,84 @@
 import React, { useState } from "react";
 import { Wallet, Eye, EyeOff } from "lucide-react";
 import { Link } from "react-router-dom";
+import { signup } from "../api/user";
 
-const Login = () => {
+const SignUp = () => {
+  const [formData, setFormData] = useState({
+    username: "",
+    email: "",
+    password: "",
+    confirmPassword: "",
+  });
+
   const [showPassword, setShowPassword] = useState(false);
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [passwordMatchError, setPasswordMatchError] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+
+    if (name === "password" || name === "confirmPassword") {
+      if (name === "password") {
+        setPasswordMatchError(value !== formData.confirmPassword);
+      } else {
+        setPasswordMatchError(value !== formData.password);
+      }
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("Login attempt with:", { email, password });
+    if (formData.password !== formData.confirmPassword) {
+      setPasswordMatchError(true);
+      return;
+    }
+    const response = await signup(formData);
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-8 sm:px-6 lg:px-8">
       <div className="sm:mx-auto sm:w-full sm:max-w-md text-center">
         <div className="flex items-center justify-center space-x-2">
           <Wallet className="h-8 w-8 text-[#1A4D2E]" />
           <span className="text-2xl font-bold text-gray-800">Credit App</span>
         </div>
-        <h2 className="mt-6 text-3xl font-bold text-gray-900">Welcome Back</h2>
+        <h2 className="mt-4 text-3xl font-bold text-gray-900">
+          Create an Account
+        </h2>
         <p className="mt-2 text-sm text-gray-600">
-          Enter your credentials to access your account
+          Join us and start your journey
         </p>
       </div>
 
-      <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-        <div className="bg-white py-8 px-4 shadow-sm rounded-lg sm:px-10">
-          <form className="space-y-6" onSubmit={handleSubmit}>
+      <div className="mt-6 sm:mx-auto sm:w-full sm:max-w-md">
+        <div className="bg-white py-6 px-4 shadow-sm rounded-lg sm:px-10">
+          <form className="space-y-4" onSubmit={handleSubmit}>
+            <div>
+              <label
+                htmlFor="username"
+                className="block text-sm font-medium text-gray-700"
+              >
+                Username
+              </label>
+              <div className="mt-1">
+                <input
+                  id="username"
+                  name="username"
+                  type="text"
+                  required
+                  value={formData.username}
+                  onChange={handleChange}
+                  className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-[#1A4D2E] focus:border-[#1A4D2E] sm:text-sm"
+                  placeholder="Choose a username"
+                />
+              </div>
+            </div>
+
             <div>
               <label
                 htmlFor="email"
@@ -42,8 +93,8 @@ const Login = () => {
                   type="email"
                   autoComplete="email"
                   required
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  value={formData.email}
+                  onChange={handleChange}
                   className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-[#1A4D2E] focus:border-[#1A4D2E] sm:text-sm"
                   placeholder="Enter your email"
                 />
@@ -62,12 +113,11 @@ const Login = () => {
                   id="password"
                   name="password"
                   type={showPassword ? "text" : "password"}
-                  autoComplete="current-password"
                   required
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  value={formData.password}
+                  onChange={handleChange}
                   className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-[#1A4D2E] focus:border-[#1A4D2E] sm:text-sm pr-10"
-                  placeholder="Enter your password"
+                  placeholder="Create a password"
                 />
                 <button
                   type="button"
@@ -83,30 +133,43 @@ const Login = () => {
               </div>
             </div>
 
-            <div className="flex items-center justify-between">
-              <div className="flex items-center">
+            <div>
+              <label
+                htmlFor="confirmPassword"
+                className="block text-sm font-medium text-gray-700"
+              >
+                Confirm Password
+              </label>
+              <div className="mt-1 relative">
                 <input
-                  id="remember-me"
-                  name="remember-me"
-                  type="checkbox"
-                  className="h-4 w-4 text-[#1A4D2E] focus:ring-[#1A4D2E] border-gray-300 rounded"
+                  id="confirmPassword"
+                  name="confirmPassword"
+                  type={showConfirmPassword ? "text" : "password"}
+                  required
+                  value={formData.confirmPassword}
+                  onChange={handleChange}
+                  className={`appearance-none block w-full px-3 py-2 border rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-[#1A4D2E] focus:border-[#1A4D2E] sm:text-sm pr-10 ${
+                    passwordMatchError ? "border-red-500" : "border-gray-300"
+                  }`}
+                  placeholder="Confirm your password"
                 />
-                <label
-                  htmlFor="remember-me"
-                  className="ml-2 block text-sm text-gray-700"
+                <button
+                  type="button"
+                  className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                 >
-                  Remember me
-                </label>
+                  {showConfirmPassword ? (
+                    <EyeOff className="h-5 w-5 text-gray-400" />
+                  ) : (
+                    <Eye className="h-5 w-5 text-gray-400" />
+                  )}
+                </button>
               </div>
-
-              <div className="text-sm">
-                <a
-                  href="#"
-                  className="font-medium text-[#1A4D2E] hover:text-[#153d25]"
-                >
-                  Forgot password?
-                </a>
-              </div>
+              {passwordMatchError && (
+                <p className="mt-1 text-sm text-red-600">
+                  Passwords do not match
+                </p>
+              )}
             </div>
 
             <div>
@@ -114,36 +177,36 @@ const Login = () => {
                 type="submit"
                 className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-[#1A4D2E] hover:bg-[#153d25] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#1A4D2E] transition-colors duration-200"
               >
-                Sign in
+                Create Account
               </button>
             </div>
 
             <div className="text-sm text-center">
-              <Link to="/signup">
-                <span className="text-gray-600">Don't have an account? </span>
+              <Link to="/login">
+                <span className="text-gray-600">Already have an account? </span>
                 <a
                   href="#"
                   className="font-medium text-[#1A4D2E] hover:text-[#153d25]"
                 >
-                  Sign up now
+                  Sign in
                 </a>
               </Link>
             </div>
           </form>
 
-          <div className="mt-6">
+          <div className="mt-4">
             <div className="relative">
               <div className="absolute inset-0 flex items-center">
                 <div className="w-full border-t border-gray-300" />
               </div>
               <div className="relative flex justify-center text-sm">
                 <span className="px-2 bg-white text-gray-500">
-                  Or continue with
+                  Or sign up with
                 </span>
               </div>
             </div>
 
-            <div className="mt-6">
+            <div className="mt-4">
               <button
                 type="button"
                 className="w-full inline-flex items-center justify-center gap-2 py-2 px-4 border border-gray-300 rounded-md shadow-sm bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#1A4D2E] transition-colors duration-200"
@@ -166,7 +229,7 @@ const Login = () => {
                     fill="#EA4335"
                   />
                 </svg>
-                Sign in with Google
+                Sign up with Google
               </button>
             </div>
           </div>
@@ -176,4 +239,4 @@ const Login = () => {
   );
 };
 
-export default Login;
+export default SignUp;

@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Wallet } from "lucide-react";
-
+import { Link } from "react-router-dom";
 const Home = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
@@ -22,9 +22,11 @@ const Home = () => {
               <button className="bg-[#1A4D2E] text-white px-6 py-2 rounded-md hover:bg-[#153d25] transition-colors duration-200">
                 Get Started
               </button>
-              <button className="text-[#1A4D2E] hover:text-[#153d25] px-4 py-2">
-                Login
-              </button>
+              <Link to="/login">
+                <button className="text-[#1A4D2E] hover:text-[#153d25] px-4 py-2">
+                  Login
+                </button>
+              </Link>
             </div>
 
             {/* Mobile menu button */}
