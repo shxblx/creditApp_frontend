@@ -13,7 +13,7 @@ export const UserRouter: React.FC = () => {
       <Route path="/mainhome" element={<MainHome />} />
       <Route path="/dashboard" element={<Dashboard />} />
       <Route path="/login" element={<Login />} />
-      <Route path="/login" element={<SignUp />} />
+      <Route path="/signup" element={<SignUp />} />
     </Routes>
   );
 };
