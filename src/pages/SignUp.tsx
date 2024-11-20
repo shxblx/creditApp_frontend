@@ -1,7 +1,10 @@
 import React, { useState } from "react";
 import { Wallet, Eye, EyeOff } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { signup } from "../api/user";
+import { useDispatch } from "react-redux";
+import { setUserInfo } from "@/redux/slices/userSlice";
+import toast from "react-hot-toast";
 
 const SignUp = () => {
   const [formData, setFormData] = useState({
@@ -10,6 +13,8 @@ const SignUp = () => {
     password: "",
     confirmPassword: "",
   });
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
 
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -38,6 +43,17 @@ const SignUp = () => {
       return;
     }
     const response = await signup(formData);
+    if (response.status === 200) {
+      dispatch(
+        setUserInfo({
+          user: "User",
+        })
+      );
+      navigate("/dashboard");
+      toast.success(response.data);
+    } else {
+      toast.error(response.data);
+    }
   };
 
   return (

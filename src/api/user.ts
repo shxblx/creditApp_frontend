@@ -7,10 +7,8 @@ export const signup = async (data: {
   email: string;
 }) => {
   try {
-    console.log(data);
-
     const response = await Api.post(userRoutes.signup, data);
-    console.log(response);
+    return response;
   } catch (error: any) {
     if (error.response) {
       console.log(error.response);
