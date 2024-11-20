@@ -5,6 +5,7 @@ import { login } from "@/api/user";
 import { useDispatch } from "react-redux";
 import { setUserInfo } from "@/redux/slices/userSlice";
 import toast from "react-hot-toast";
+import { setAdminInfo } from "@/redux/slices/adminSlice";
 
 const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
@@ -16,13 +17,23 @@ const Login = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const response = await login({ email, password });
-    if (response.status === 200) {
+    console.log(response.data.isAdmin);
+
+    if (response.data.isAdmin && response.status === 200) {
+      dispatch(
+        setAdminInfo({
+          user: "Admin",
+        })
+      );
+      navigate("/dashboard");
+      toast.success(response.data.message);
+    } else if (response.status === 200) {
       dispatch(
         setUserInfo({
           user: "User",
         })
       );
-      navigate("/dashboard");
+      navigate("/mainhome");
       toast.success(response.data);
     } else {
       toast.error(response.data);

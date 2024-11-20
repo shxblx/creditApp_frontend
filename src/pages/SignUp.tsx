@@ -49,7 +49,7 @@ const SignUp = () => {
           user: "User",
         })
       );
-      navigate("/dashboard");
+      navigate("/mainhome");
       toast.success(response.data);
     } else {
       toast.error(response.data);
