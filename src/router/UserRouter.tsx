@@ -17,7 +17,10 @@ export const UserRouter: React.FC = () => {
         path="/login"
         element={<PublicRoute element={<Login />} redirectTo="/dashboard" />}
       />
-      <Route path="/signup" element={<SignUp />} />
+      <Route
+        path="/signup"
+        element={<PublicRoute element={<SignUp />} redirectTo="/dashboard" />}
+      />
       <Route
         path="/"
         element={
