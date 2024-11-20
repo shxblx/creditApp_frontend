@@ -1,95 +1,103 @@
+import React, { useState, useEffect } from "react";
 import {
   LineChart,
   Line,
-  BarChart,
-  Bar,
   XAxis,
   YAxis,
   CartesianGrid,
   Tooltip,
 } from "recharts";
 import { Card, CardContent } from "@/components/ui/card";
-import { User } from "lucide-react"; // Import the default user icon
+import { User, X } from "lucide-react";
+import { fetchLoansForAdmin, updateLoanStatus } from "@/api/user";
+import toast from "react-hot-toast";
+
+interface Loan {
+  _id: string;
+  userId: string;
+  fullName: string;
+  loanAmount: string;
+  loanTenure: string;
+  loanStatus: string;
+  createdAt: string;
+  updatedAt: string;
+  employmentStatus?: string;
+  employmentAddress?: string;
+  reasonForLoan?: string;
+}
 
 const Dashboard = () => {
-  // Sample data for stats
+  const [loans, setLoans] = useState<Loan[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [selectedLoan, setSelectedLoan] = useState<Loan | null>(null);
+  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
+
+  const LOAN_STATUSES = ["all", "Pending", "Approved", "Rejected", "Disbursed"];
+
   const stats = [
-    { title: "LOANS", value: "50", icon: "📊" },
-    { title: "USERS", value: "100", icon: "👥" },
-    { title: "CASH DISBURSED", value: "$50,000", icon: "💰" },
-    { title: "REPAID LOANS", value: "20", icon: "✅" },
-    { title: "REVENUE", value: "$450,000", icon: "📈" },
-    { title: "CASH RECEIVED", value: "1,000,000", icon: "💵" },
+    { title: "TOTAL LOANS", value: "0", icon: "📊" },
+    { title: "USERS", value: "0", icon: "👥" },
+    { title: "CASH DISBURSED", value: "$0", icon: "💰" },
+    { title: "REPAID LOANS", value: "0", icon: "✅" },
+    { title: "REVENUE", value: "$0", icon: "📈" },
+    { title: "CASH RECEIVED", value: "$0", icon: "💵" },
   ];
 
-  // Sample data for applied loans
-  const appliedLoans = [
-    {
-      id: 1,
-      name: "James Clark and Trust",
-      type: "Personal Loan",
-      date: "Jan 20, 2024",
-      status: "Pending",
-    },
-    {
-      id: 2,
-      name: "Maria Hughes",
-      type: "Auto Loan",
-      date: "Jan 19, 2024",
-      status: "Approved",
-    },
-    {
-      id: 3,
-      name: "Steve Jobs",
-      type: "Business Loan",
-      date: "Jan 18, 2024",
-      status: "Rejected",
-    },
-    {
-      id: 4,
-      name: "Katherine Long Smith",
-      type: "Personal Loan",
-      date: "Jan 18, 2024",
-      status: "Processing",
-    },
-    {
-      id: 5,
-      name: "William Davis",
-      type: "Home Loan",
-      date: "Jan 17, 2024",
-      status: "Approved",
-    },
-  ];
-
-  // Sample data for charts
   const loanTrendData = [
-    { month: "Jan", value: 30 },
-    { month: "Feb", value: 45 },
-    { month: "Mar", value: 35 },
-    { month: "Apr", value: 50 },
-    { month: "May", value: 40 },
-    { month: "Jun", value: 55 },
+    { month: "Jan", value: 0 },
+    { month: "Feb", value: 0 },
+    { month: "Mar", value: 0 },
+    { month: "Apr", value: 0 },
+    { month: "May", value: 0 },
+    { month: "Jun", value: 0 },
   ];
 
-  const outstandingData = [
-    { month: "Jan", value: 20000 },
-    { month: "Feb", value: 35000 },
-    { month: "Mar", value: 25000 },
-    { month: "Apr", value: 45000 },
-    { month: "May", value: 30000 },
-    { month: "Jun", value: 25000 },
-  ];
+  useEffect(() => {
+    const loadLoans = async () => {
+      try {
+        setIsLoading(true);
+        const response = await fetchLoansForAdmin();
+        setLoans(response.data.loans || []);
 
-  const repaymentData = [
-    { month: "Jan", value: 15 },
-    { month: "Feb", value: 25 },
-    { month: "Mar", value: 20 },
-    { month: "Apr", value: 30 },
-    { month: "May", value: 22 },
-    { month: "Jun", value: 18 },
-  ];
+        stats[0].value = response.data.loans.length.toString();
+        setIsLoading(false);
+      } catch (error) {
+        console.error("Error fetching loans:", error);
+        toast.error("Failed to fetch loans");
+        setIsLoading(false);
+      }
+    };
 
-  const getStatusColor = (status: any) => {
+    loadLoans();
+  }, []);
+
+
+  const handleUpdateStatus = async (loanId: string, newStatus: string) => {
+    try {
+      const response = await updateLoanStatus({ loanId, newStatus });
+      if (response.status === 200) {
+        toast.success(`Loan status updated to ${newStatus}`);
+      }
+      setLoans((prevLoans) =>
+        prevLoans.map((loan) =>
+          loan._id === loanId ? { ...loan, loanStatus: newStatus } : loan
+        )
+      );
+
+      if (selectedLoan && selectedLoan._id === loanId) {
+        setSelectedLoan((prev) =>
+          prev ? { ...prev, loanStatus: newStatus } : null
+        );
+      }
+    } catch (error) {
+      console.error("Error updating loan status:", error);
+      toast.error("Failed to update loan status");
+    }
+  };
+
+
+  const getStatusColor = (status: string) => {
     switch (status.toLowerCase()) {
       case "approved":
         return "bg-green-500";
@@ -97,16 +105,37 @@ const Dashboard = () => {
         return "bg-yellow-500";
       case "rejected":
         return "bg-red-500";
-      case "processing":
+      case "disbursed":
         return "bg-blue-500";
       default:
         return "bg-gray-500";
     }
   };
 
+
+  const formatCurrency = (amount: string) => {
+    return new Intl.NumberFormat("en-IN", {
+      style: "currency",
+      currency: "INR",
+      maximumFractionDigits: 0,
+    }).format(parseFloat(amount));
+  };
+
+
+  const filteredLoans = loans.filter(
+    (loan) =>
+      statusFilter === "all" || loan.loanStatus.toLowerCase() === statusFilter
+  );
+
+
+  const openLoanDetails = (loan: Loan) => {
+    setSelectedLoan(loan);
+    setIsDetailModalOpen(true);
+  };
+
   return (
     <div className="space-y-6">
-      {/* Stats Grid */}
+  
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {stats.map((stat, index) => (
           <Card key={index} className="bg-white">
@@ -125,58 +154,200 @@ const Dashboard = () => {
         ))}
       </div>
 
-      {/* Applied Loans Table */}
       <Card className="bg-white">
         <CardContent className="p-4">
-          <h2 className="text-lg font-semibold mb-4">Applied Loans</h2>
-          <div className="overflow-x-auto">
-            <table className="min-w-full">
-              <thead>
-                <tr className="border-b">
-                  <th className="text-left p-2">Name</th>
-                  <th className="text-left p-2">Type</th>
-                  <th className="text-left p-2">Date</th>
-                  <th className="text-left p-2">Status</th>
-                  <th className="text-left p-2">Action</th>
-                </tr>
-              </thead>
-              <tbody>
-                {appliedLoans.map((loan) => (
-                  <tr key={loan.id} className="border-b">
-                    <td className="p-2">
-                      <div className="flex items-center">
-                        <User className="w-8 h-8 rounded-full mr-2" />{" "}
-                        {/* Default user icon */}
-                        {loan.name}
-                      </div>
-                    </td>
-                    <td className="p-2">{loan.type}</td>
-                    <td className="p-2">{loan.date}</td>
-                    <td className="p-2">
-                      <span
-                        className={`px-2 py-1 rounded-full text-white text-sm ${getStatusColor(
-                          loan.status
-                        )}`}
-                      >
-                        {loan.status}
-                      </span>
-                    </td>
-                    <td className="p-2">
-                      <button className="bg-[#0F4C3A] text-white px-3 py-1 rounded-md text-sm">
-                        View
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-lg font-semibold">Loan Applications</h2>
+
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              className="px-2 py-1 border rounded"
+            >
+              {LOAN_STATUSES.map((status) => (
+                <option key={status} value={status}>
+                  {status.charAt(0).toUpperCase() + status.slice(1)}
+                </option>
+              ))}
+            </select>
           </div>
+
+          {isLoading ? (
+            <div className="text-center py-4">Loading loans...</div>
+          ) : filteredLoans.length === 0 ? (
+            <div className="text-center py-4">No loans found</div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="min-w-full">
+                <thead>
+                  <tr className="border-b">
+                    <th className="text-left p-2">Name</th>
+                    <th className="text-left p-2">Loan Amount</th>
+                    <th className="text-left p-2">Loan Tenure</th>
+                    <th className="text-left p-2">Status</th>
+                    <th className="text-left p-2">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredLoans.map((loan) => (
+                    <tr key={loan._id} className="border-b">
+                      <td className="p-2 flex items-center">
+                        <User className="w-8 h-8 rounded-full mr-2" />
+                        {loan.fullName}
+                      </td>
+                      <td className="p-2">{formatCurrency(loan.loanAmount)}</td>
+                      <td className="p-2">{loan.loanTenure} months</td>
+                      <td className="p-2">
+                        <span
+                          className={`px-2 py-1 rounded-full text-white text-sm ${getStatusColor(
+                            loan.loanStatus
+                          )}`}
+                        >
+                          {loan.loanStatus}
+                        </span>
+                      </td>
+                      <td className="p-2 space-x-2">
+                        <select
+                          value={loan.loanStatus}
+                          onChange={(e) =>
+                            handleUpdateStatus(loan._id, e.target.value)
+                          }
+                          className="px-2 py-1 border rounded text-sm"
+                        >
+                          {LOAN_STATUSES.filter((s) => s !== "all").map(
+                            (status) => (
+                              <option key={status} value={status}>
+                                {status}
+                              </option>
+                            )
+                          )}
+                        </select>
+                        <button
+                          onClick={() => openLoanDetails(loan)}
+                          className="bg-[#0F4C3A] text-white px-3 py-1 rounded-md text-sm"
+                        >
+                          View Details
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </CardContent>
       </Card>
 
-      {/* Charts */}
+      {selectedLoan && isDetailModalOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
+          <div className="bg-white rounded-lg shadow-xl p-6 max-w-md w-full">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-bold">Loan Details</h2>
+              <button
+                onClick={() => setIsDetailModalOpen(false)}
+                className="text-gray-500 hover:text-gray-700"
+              >
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-sm text-gray-600">Full Name</label>
+                  <p className="font-semibold">{selectedLoan.fullName}</p>
+                </div>
+                <div>
+                  <label className="text-sm text-gray-600">Loan Amount</label>
+                  <p className="font-semibold">
+                    {formatCurrency(selectedLoan.loanAmount)}
+                  </p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-sm text-gray-600">Loan Tenure</label>
+                  <p className="font-semibold">
+                    {selectedLoan.loanTenure} months
+                  </p>
+                </div>
+                <div>
+                  <label className="text-sm text-gray-600">Status</label>
+                  <span
+                    className={`px-2 py-1 rounded-full text-white text-sm ${getStatusColor(
+                      selectedLoan.loanStatus
+                    )}`}
+                  >
+                    {selectedLoan.loanStatus}
+                  </span>
+                </div>
+              </div>
+
+              <div>
+                <label className="text-sm text-gray-600">
+                  Employment Status
+                </label>
+                <p className="font-semibold">
+                  {selectedLoan.employmentStatus || "Not Specified"}
+                </p>
+              </div>
+
+              <div>
+                <label className="text-sm text-gray-600">
+                  Employment Address
+                </label>
+                <p className="font-semibold">
+                  {selectedLoan.employmentAddress || "Not Provided"}
+                </p>
+              </div>
+
+              <div>
+                <label className="text-sm text-gray-600">Reason for Loan</label>
+                <p className="font-semibold">
+                  {selectedLoan.reasonForLoan || "Not Specified"}
+                </p>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-sm text-gray-600">Applied On</label>
+                  <p className="font-semibold">
+                    {new Date(selectedLoan.createdAt).toLocaleDateString()}
+                  </p>
+                </div>
+                <div>
+                  <label className="text-sm text-gray-600">Last Updated</label>
+                  <p className="font-semibold">
+                    {new Date(selectedLoan.updatedAt).toLocaleDateString()}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-6">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Update Loan Status
+              </label>
+              <select
+                value={selectedLoan.loanStatus}
+                onChange={(e) =>
+                  handleUpdateStatus(selectedLoan._id, e.target.value)
+                }
+                className="w-full px-3 py-2 border rounded-md"
+              >
+                {LOAN_STATUSES.filter((s) => s !== "all").map((status) => (
+                  <option key={status} value={status}>
+                    {status}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="grid grid-cols-1 gap-6">
-        {/* Loan Trend Chart */}
         <Card className="bg-white">
           <CardContent className="p-4">
             <h2 className="text-lg font-semibold mb-4">
@@ -190,42 +361,6 @@ const Dashboard = () => {
                 <Tooltip />
                 <Line type="monotone" dataKey="value" stroke="#0F4C3A" />
               </LineChart>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Total Outstanding Chart */}
-        <Card className="bg-white">
-          <CardContent className="p-4">
-            <h2 className="text-lg font-semibold mb-4">
-              Total Outstanding Loan - Monthly
-            </h2>
-            <div className="h-64">
-              <BarChart width={800} height={240} data={outstandingData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="month" />
-                <YAxis />
-                <Tooltip />
-                <Bar dataKey="value" fill="#2563eb" />
-              </BarChart>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Repayment Chart */}
-        <Card className="bg-white">
-          <CardContent className="p-4">
-            <h2 className="text-lg font-semibold mb-4">
-              Number of Repayments Collected - Monthly
-            </h2>
-            <div className="h-64">
-              <BarChart width={800} height={240} data={repaymentData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="month" />
-                <YAxis />
-                <Tooltip />
-                <Bar dataKey="value" fill="#dc2626" />
-              </BarChart>
             </div>
           </CardContent>
         </Card>

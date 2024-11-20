@@ -9,9 +9,14 @@ import { useSelector } from "react-redux";
 interface ApplyLoanModalProps {
   isOpen: boolean;
   onClose: () => void;
+  onLoanApplied?: () => void;
 }
 
-const ApplyLoanModal: React.FC<ApplyLoanModalProps> = ({ isOpen, onClose }) => {
+const ApplyLoanModal: React.FC<ApplyLoanModalProps> = ({
+  isOpen,
+  onClose,
+  onLoanApplied,
+}) => {
   const userInfo = useSelector((state: RootState) => state.userInfo.userInfo);
   const [formData, setFormData] = useState({
     userId: userInfo.userId,
@@ -119,6 +124,9 @@ const ApplyLoanModal: React.FC<ApplyLoanModalProps> = ({ isOpen, onClose }) => {
       const response = await getLoan(formData);
       if (response.status === 200) {
         toast.success(response.data.message);
+        if (onLoanApplied) {
+          onLoanApplied();
+        }
       } else {
         toast.error(response.data.message);
       }

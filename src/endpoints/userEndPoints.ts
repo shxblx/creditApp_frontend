@@ -5,6 +5,8 @@ const userRoutes = {
   adminLogout: "/adminLogout",
   applyLoan: "/applyloan",
   fetchLoan: "/fetchloan",
+  fetchLoanAdmin: "/fetchloanadmin",
+  updateStatus: "/updatestatus",
 };
 
 export default userRoutes;

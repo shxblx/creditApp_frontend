@@ -101,3 +101,36 @@ export const fetchLoan = async (userId: string) => {
     throw error;
   }
 };
+export const updateLoanStatus = async (data: {
+  loanId: string;
+  newStatus: string;
+}) => {
+  try {
+    const response = await Api.post(userRoutes.updateStatus, data);
+    console.log(response);
+
+    return response;
+  } catch (error: any) {
+    if (error.response) {
+      console.log(error.response);
+      return error.response;
+    } else {
+      console.error("Error", error.message);
+    }
+    throw error;
+  }
+};
+export const fetchLoansForAdmin = async () => {
+  try {
+    const response = await Api.get(userRoutes.fetchLoanAdmin);
+    return response;
+  } catch (error: any) {
+    if (error.response) {
+      console.log(error.response);
+      return error.response;
+    } else {
+      console.error("Error", error.message);
+    }
+    throw error;
+  }
+};

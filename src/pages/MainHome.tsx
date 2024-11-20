@@ -80,25 +80,22 @@ const MainHome = () => {
   const dispatch = useDispatch();
   const userInfo = useSelector((state: RootState) => state.userInfo.userInfo);
 
-  useEffect(() => {
-    const loadLoans = async () => {
-      try {
-        setIsLoading(true);
-        if (userInfo?.userId) {
-          const response = await fetchLoan(userInfo.userId);
-          setLoans(
-            Array.isArray(response.data.loans) ? response.data.loans : []
-          );
-        }
-      } catch (error) {
-        console.error("Error fetching loans:", error);
-        toast.error("Failed to fetch loans");
-        setLoans([]);
-      } finally {
-        setIsLoading(false);
+  const loadLoans = async () => {
+    try {
+      setIsLoading(true);
+      if (userInfo?.userId) {
+        const response = await fetchLoan(userInfo.userId);
+        setLoans(Array.isArray(response.data.loans) ? response.data.loans : []);
       }
-    };
-
+    } catch (error) {
+      console.error("Error fetching loans:", error);
+      toast.error("Failed to fetch loans");
+      setLoans([]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  useEffect(() => {
     loadLoans();
   }, [userInfo?.userId]);
 
@@ -217,9 +214,7 @@ const MainHome = () => {
         </div>
       </nav>
 
-      {/* Main Content */}
       <div className="max-w-6xl mx-auto px-4 py-4">
-        {/* Amount Display */}
         <div className="bg-white rounded-lg shadow p-4 mb-4">
           <div className="flex justify-between items-center">
             <div>
@@ -362,6 +357,7 @@ const MainHome = () => {
       <ApplyLoanModal
         isOpen={isApplyLoanModalOpen}
         onClose={() => setIsApplyLoanModalOpen(false)}
+        onLoanApplied={loadLoans} // Add this callback to refresh loans
       />
 
       {/* Loan Details Modal */}
