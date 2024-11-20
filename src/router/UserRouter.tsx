@@ -4,16 +4,31 @@ import Home from "../pages/Home";
 import Login from "../pages/Login";
 import SignUp from "../pages/SignUp";
 import Dashboard from "@/pages/Dashboard";
-import MainHome from "@/pages/MainHome";
+import AuthLayout from "../components/AuthLayout";
+import PublicRoute from "@/components/PublicRoute";
+import AuthenticatedRoute from "@/components/AuthenticatedRoute";
 
 export const UserRouter: React.FC = () => {
   return (
     <Routes>
+      {/* Public routes */}
       <Route path="/" element={<Home />} />
-      <Route path="/mainhome" element={<MainHome />} />
-      <Route path="/dashboard" element={<Dashboard />} />
-      <Route path="/login" element={<Login />} />
-      <Route path="/signup" element={<SignUp  />} />
+      <Route
+        path="/login"
+        element={<PublicRoute element={<Login />} redirectTo="/dashboard" />}
+      />
+      <Route
+        path="/signup"
+        element={<PublicRoute element={<SignUp />} redirectTo="/dashboard" />}
+      />
+      <Route
+        path="/"
+        element={
+          <AuthenticatedRoute element={<AuthLayout />} redirectTo="/login" />
+        }
+      >
+        <Route path="/dashboard" element={<Dashboard />} />
+      </Route>
     </Routes>
   );
 };

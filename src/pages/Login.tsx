@@ -1,15 +1,32 @@
 import React, { useState } from "react";
 import { Wallet, Eye, EyeOff } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { login } from "@/api/user";
+import { useDispatch } from "react-redux";
+import { setUserInfo } from "@/redux/slices/userSlice";
+import toast from "react-hot-toast";
 
 const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("Login attempt with:", { email, password });
+    const response = await login({ email, password });
+    if (response.status === 200) {
+      dispatch(
+        setUserInfo({
+          user: "User",
+        })
+      );
+      navigate("/dashboard");
+      toast.success(response.data);
+    } else {
+      toast.error(response.data);
+    }
   };
 
   return (
@@ -83,30 +100,13 @@ const Login = () => {
               </div>
             </div>
 
-            <div className="flex items-center justify-between">
-              <div className="flex items-center">
-                <input
-                  id="remember-me"
-                  name="remember-me"
-                  type="checkbox"
-                  className="h-4 w-4 text-[#1A4D2E] focus:ring-[#1A4D2E] border-gray-300 rounded"
-                />
-                <label
-                  htmlFor="remember-me"
-                  className="ml-2 block text-sm text-gray-700"
-                >
-                  Remember me
-                </label>
-              </div>
-
-              <div className="text-sm">
-                <a
-                  href="#"
-                  className="font-medium text-[#1A4D2E] hover:text-[#153d25]"
-                >
-                  Forgot password?
-                </a>
-              </div>
+            <div className="text-sm text-right">
+              <a
+                href="#"
+                className="font-medium text-[#1A4D2E] hover:text-[#153d25]"
+              >
+                Forgot password?
+              </a>
             </div>
 
             <div>
