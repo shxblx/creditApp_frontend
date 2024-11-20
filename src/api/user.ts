@@ -34,3 +34,28 @@ export const login = async (data: { email: string; password: string }) => {
     throw error;
   }
 };
+
+export const logout = async () => {
+  try {
+    const response = await Api.post(userRoutes.logout);
+    return response;
+  } catch (error: any) {
+    console.error("Error", error.message);
+    throw error;
+  }
+};
+
+export const adminLogout = async () => {
+  try {
+    const response = await Api.post(userRoutes.adminLogout);
+    return response;
+  } catch (error: any) {
+    if (error.response) {
+      console.log(error.response);
+      return error.response;
+    } else {
+      console.error("Error", error.message);
+    }
+    throw error;
+  }
+};

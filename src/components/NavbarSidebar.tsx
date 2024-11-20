@@ -21,6 +21,10 @@ import {
   Wallet,
   X,
 } from "lucide-react";
+import { adminLogout } from "@/api/user";
+import { useDispatch } from "react-redux";
+import { removeAdminInfo } from "@/redux/slices/adminSlice";
+import toast from "react-hot-toast";
 
 interface NavbarSidebarProps {
   children: ReactNode;
@@ -54,9 +58,14 @@ const NavbarSidebar: React.FC<NavbarSidebarProps> = ({ children }) => {
     { icon: <Calendar size={20} />, text: "Calendar" },
     { icon: <Settings size={20} />, text: "Settings" },
   ];
-
+  const dispatch = useDispatch();
   const toggleSidebar = () => {
     setSidebarOpen(!isSidebarOpen);
+  };
+  const handleLogout = async () => {
+    await adminLogout();
+    dispatch(removeAdminInfo());
+    toast.success("Admin Logout Success");
   };
 
   return (
@@ -149,7 +158,7 @@ const NavbarSidebar: React.FC<NavbarSidebarProps> = ({ children }) => {
                 <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50">
                   <button
                     onClick={() => {
-                      // Add logout logic here
+                      handleLogout();
                       setProfileDropdownOpen(false);
                     }}
                     className="flex items-center w-full px-4 py-2 text-gray-700 hover:bg-gray-100"

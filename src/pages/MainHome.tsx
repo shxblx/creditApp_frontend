@@ -1,4 +1,4 @@
-import  { useState } from "react";
+import { useState } from "react";
 import {
   Bell,
   MessageSquare,
@@ -8,10 +8,15 @@ import {
   CircleDollarSign,
   Wallet,
 } from "lucide-react";
+import { logout } from "@/api/user";
+import { useDispatch } from "react-redux";
+import { removeUserInfo } from "@/redux/slices/userSlice";
+import toast from "react-hot-toast";
 
 const MainHome = () => {
   const [amount] = useState("0.0");
   const [showDropdown, setShowDropdown] = useState(false);
+  const dispatch = useDispatch();
 
   const mockLoans = [
     {
@@ -67,9 +72,11 @@ const MainHome = () => {
     }
   };
 
-  const handleLogout = () => {
-    // Add your logout logic here
-    console.log("Logging out...");
+  const handleLogout = async () => {
+    await logout();
+
+    dispatch(removeUserInfo());
+    toast.success("Logout Success");
   };
 
   return (
