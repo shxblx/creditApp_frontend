@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Wallet, Eye, EyeOff, Loader2 } from "lucide-react";
+import { Wallet, Eye, EyeOff } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { login } from "@/api/user";
 import { useDispatch } from "react-redux";
