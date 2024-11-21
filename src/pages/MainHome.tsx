@@ -9,6 +9,7 @@ import {
   Wallet,
   Eye,
   Loader2,
+  Receipt,
 } from "lucide-react";
 import { useDispatch } from "react-redux";
 import { useSelector } from "react-redux";
@@ -59,17 +60,16 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, children, title }) => {
   );
 };
 
-const formatToINR = (amount: string) => {
-  const numAmount = parseFloat(amount);
-  return new Intl.NumberFormat("en-IN", {
-    style: "currency",
-    currency: "INR",
+const formatToINR = (amount: string | number) => {
+  const numAmount = typeof amount === "string" ? parseFloat(amount) : amount;
+  return `₹ ${new Intl.NumberFormat("en-IN", {
+    minimumFractionDigits: 0,
     maximumFractionDigits: 0,
-  }).format(numAmount);
+  }).format(numAmount)}`;
 };
 
 const MainHome = () => {
-  const [amount] = useState("0.0");
+  const [totalDisbursed, setTotalDisbursed] = useState(0);
   const [isApplyLoanModalOpen, setIsApplyLoanModalOpen] = useState(false);
   const [loans, setLoans] = useState<Loan[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -87,11 +87,14 @@ const MainHome = () => {
       if (userInfo?.userId) {
         const response = await fetchLoan(userInfo.userId);
         setLoans(Array.isArray(response.data.loans) ? response.data.loans : []);
+        // Set total disbursed amount from the server response
+        setTotalDisbursed(response.data.totalDisbursed || 0);
       }
     } catch (error) {
       console.error("Error fetching loans:", error);
       toast.error("Failed to fetch loans");
       setLoans([]);
+      setTotalDisbursed(0);
     } finally {
       setIsLoading(false);
     }
@@ -210,10 +213,12 @@ const MainHome = () => {
           <div className="flex justify-between items-center">
             <div>
               <div className="flex items-center space-x-2">
-                <DollarSign className="h-6 w-6 text-[#1A4D2E]" />
-                <span className="text-xl font-bold">{formatToINR(amount)}</span>
+              <Receipt className="h-6 w-6 text-[#1A4D2E]" />
+                <span className="text-xl font-bold">
+                  {formatToINR(totalDisbursed)}
+                </span>
               </div>
-              <p className="text-gray-600 text-sm mt-1">Current Balance</p>
+              <p className="text-gray-600 text-sm mt-1">DEFICIT</p>
             </div>
             <button
               onClick={() => setIsApplyLoanModalOpen(true)}
