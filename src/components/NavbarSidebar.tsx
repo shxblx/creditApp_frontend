@@ -40,8 +40,7 @@ interface SidebarItem {
 
 const NavbarSidebar: React.FC<NavbarSidebarProps> = ({ children }) => {
   const [isSidebarOpen, setSidebarOpen] = useState<boolean>(true);
-  const [isProfileDropdownOpen, setProfileDropdownOpen] =
-    useState<boolean>(false);
+  const [isProfileDropdownOpen, setProfileDropdownOpen] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const location = useLocation();
   const navigate = useNavigate();
@@ -84,10 +83,13 @@ const NavbarSidebar: React.FC<NavbarSidebarProps> = ({ children }) => {
     { icon: <Calendar size={20} />, text: "Calendar", path: "/dashboard" },
     { icon: <Settings size={20} />, text: "Settings", path: "/dashboard" },
   ];
+  
   const dispatch = useDispatch();
+  
   const toggleSidebar = () => {
     setSidebarOpen(!isSidebarOpen);
   };
+  
   const handleLogout = async () => {
     setIsLoading(true);
     try {
@@ -197,7 +199,7 @@ const NavbarSidebar: React.FC<NavbarSidebarProps> = ({ children }) => {
             <button
               onClick={handleLogout}
               disabled={isLoading}
-              className="flex items-center space-x-2 hover:bg-gray-100 px-3 py-2 rounded-lg transition-colors"
+              className="flex items-center space-x-2 bg-red-500 hover:bg-red-600 text-white px-3 py-2 rounded-lg transition-colors"
             >
               {isLoading ? (
                 <Loader2 size={20} className="animate-spin" />
