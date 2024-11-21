@@ -143,7 +143,6 @@ const ApplyLoanModal: React.FC<ApplyLoanModalProps> = ({
       toast.error("Failed to submit loan application");
       console.error(error);
     } finally {
-      // Re-enable form submission
       setIsLoading(false);
     }
   };

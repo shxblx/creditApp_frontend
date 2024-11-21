@@ -65,6 +65,7 @@ const SignUp = () => {
         dispatch(
           setUserInfo({
             user: "User",
+            userId: response.data.userId,
           })
         );
         navigate("/mainhome");
