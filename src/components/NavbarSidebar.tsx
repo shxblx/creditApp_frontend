@@ -40,7 +40,8 @@ interface SidebarItem {
 
 const NavbarSidebar: React.FC<NavbarSidebarProps> = ({ children }) => {
   const [isSidebarOpen, setSidebarOpen] = useState<boolean>(true);
-  const [isProfileDropdownOpen, setProfileDropdownOpen] = useState<boolean>(false);
+  const [isProfileDropdownOpen, setProfileDropdownOpen] =
+    useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const location = useLocation();
   const navigate = useNavigate();
@@ -83,13 +84,13 @@ const NavbarSidebar: React.FC<NavbarSidebarProps> = ({ children }) => {
     { icon: <Calendar size={20} />, text: "Calendar", path: "/dashboard" },
     { icon: <Settings size={20} />, text: "Settings", path: "/dashboard" },
   ];
-  
+
   const dispatch = useDispatch();
-  
+
   const toggleSidebar = () => {
     setSidebarOpen(!isSidebarOpen);
   };
-  
+
   const handleLogout = async () => {
     setIsLoading(true);
     try {

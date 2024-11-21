@@ -1,4 +1,4 @@
-import  { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
   LineChart,
   Line,
@@ -26,22 +26,73 @@ interface Loan {
   reasonForLoan?: string;
 }
 
+interface AdminStats {
+  loans: Loan[];
+  totalLoans: number;
+  totalDisbursed: number;
+  totalUsers: number;
+  pendingLoans: number;
+  rejectedLoans: number;
+  approvedLoans: number;
+}
+
 const Dashboard = () => {
   const [loans, setLoans] = useState<Loan[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [selectedLoan, setSelectedLoan] = useState<Loan | null>(null);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
+  const [adminStats, setAdminStats] = useState<AdminStats>({
+    loans: [],
+    totalLoans: 0,
+    totalDisbursed: 0,
+    totalUsers: 0,
+    pendingLoans: 0,
+    rejectedLoans: 0,
+    approvedLoans: 0,
+  });
 
   const LOAN_STATUSES = ["all", "Pending", "Approved", "Rejected", "Disbursed"];
 
-  const stats = [
-    { title: "TOTAL LOANS", value: "0", icon: "📊" },
-    { title: "USERS", value: "0", icon: "👥" },
-    { title: "CASH DISBURSED", value: "$0", icon: "💰" },
-    { title: "REPAID LOANS", value: "0", icon: "✅" },
-    { title: "REVENUE", value: "$0", icon: "📈" },
-    { title: "CASH RECEIVED", value: "$0", icon: "💵" },
+  const formatCurrency = (amount: number | string) => {
+    return new Intl.NumberFormat("en-IN", {
+      style: "currency",
+      currency: "INR",
+      maximumFractionDigits: 0,
+    }).format(typeof amount === "string" ? parseFloat(amount) : amount);
+  };
+
+  const statsData = [
+    {
+      title: "TOTAL LOANS",
+      value: adminStats.totalLoans.toString(),
+      icon: "📊",
+    },
+    {
+      title: "TOTAL USERS",
+      value: adminStats.totalUsers.toString(),
+      icon: "👥",
+    },
+    {
+      title: "TOTAL DISBURSED",
+      value: formatCurrency(adminStats.totalDisbursed),
+      icon: "💰",
+    },
+    {
+      title: "PENDING LOANS",
+      value: adminStats.pendingLoans.toString(),
+      icon: "⏳",
+    },
+    {
+      title: "APPROVED LOANS",
+      value: adminStats.approvedLoans.toString(),
+      icon: "✅",
+    },
+    {
+      title: "REJECTED LOANS",
+      value: adminStats.rejectedLoans.toString(),
+      icon: "❌",
+    },
   ];
 
   const loanTrendData = [
@@ -53,49 +104,44 @@ const Dashboard = () => {
     { month: "Jun", value: 0 },
   ];
 
-  useEffect(() => {
-    const loadLoans = async () => {
-      try {
-        setIsLoading(true);
-        const response = await fetchLoansForAdmin();
-        setLoans(response.data.loans || []);
+  const loadLoans = useCallback(async () => {
+    try {
+      setIsLoading(true);
+      const response = await fetchLoansForAdmin();
+      const statsData: AdminStats = response.data;
 
-        stats[0].value = response.data.loans.length.toString();
-        setIsLoading(false);
-      } catch (error) {
-        console.error("Error fetching loans:", error);
-        toast.error("Failed to fetch loans");
-        setIsLoading(false);
-      }
-    };
-
-    loadLoans();
+      setAdminStats(statsData);
+      setLoans(statsData.loans || []);
+      setIsLoading(false);
+    } catch (error) {
+      console.error("Error fetching loans:", error);
+      toast.error("Failed to fetch loans");
+      setIsLoading(false);
+    }
   }, []);
 
+  useEffect(() => {
+    loadLoans();
+  }, [loadLoans]);
 
   const handleUpdateStatus = async (loanId: string, newStatus: string) => {
     try {
       const response = await updateLoanStatus({ loanId, newStatus });
       if (response.status === 200) {
         toast.success(`Loan status updated to ${newStatus}`);
-      }
-      setLoans((prevLoans) =>
-        prevLoans.map((loan) =>
-          loan._id === loanId ? { ...loan, loanStatus: newStatus } : loan
-        )
-      );
 
-      if (selectedLoan && selectedLoan._id === loanId) {
-        setSelectedLoan((prev) =>
-          prev ? { ...prev, loanStatus: newStatus } : null
-        );
+        // Reload the entire loans data to ensure all stats are updated
+        await loadLoans();
+
+        // Close the modal if it was open
+        setIsDetailModalOpen(false);
+        setSelectedLoan(null);
       }
     } catch (error) {
       console.error("Error updating loan status:", error);
       toast.error("Failed to update loan status");
     }
   };
-
 
   const getStatusColor = (status: string) => {
     switch (status.toLowerCase()) {
@@ -112,21 +158,10 @@ const Dashboard = () => {
     }
   };
 
-
-  const formatCurrency = (amount: string) => {
-    return new Intl.NumberFormat("en-IN", {
-      style: "currency",
-      currency: "INR",
-      maximumFractionDigits: 0,
-    }).format(parseFloat(amount));
-  };
-
-
   const filteredLoans = loans.filter(
     (loan) =>
       statusFilter === "all" || loan.loanStatus.toLowerCase() === statusFilter
   );
-
 
   const openLoanDetails = (loan: Loan) => {
     setSelectedLoan(loan);
@@ -135,9 +170,8 @@ const Dashboard = () => {
 
   return (
     <div className="space-y-6">
-  
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {stats.map((stat, index) => (
+        {statsData.map((stat, index) => (
           <Card key={index} className="bg-white">
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
