@@ -8,6 +8,7 @@ import {
   CircleDollarSign,
   Wallet,
   Eye,
+  Loader2,
 } from "lucide-react";
 import { useDispatch } from "react-redux";
 import { useSelector } from "react-redux";
@@ -69,13 +70,13 @@ const formatToINR = (amount: string) => {
 
 const MainHome = () => {
   const [amount] = useState("0.0");
-  const [showDropdown, setShowDropdown] = useState(false);
   const [isApplyLoanModalOpen, setIsApplyLoanModalOpen] = useState(false);
   const [loans, setLoans] = useState<Loan[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedLoan, setSelectedLoan] = useState<Loan | null>(null);
   const [showLoanDetails, setShowLoanDetails] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   const dispatch = useDispatch();
   const userInfo = useSelector((state: RootState) => state.userInfo.userInfo);
@@ -95,6 +96,7 @@ const MainHome = () => {
       setIsLoading(false);
     }
   };
+
   useEffect(() => {
     loadLoans();
   }, [userInfo?.userId]);
@@ -116,12 +118,15 @@ const MainHome = () => {
 
   const handleLogout = async () => {
     try {
+      setIsLoggingOut(true);
       await logout();
       dispatch(removeUserInfo());
       toast.success("Logout Success");
     } catch (error) {
       console.error("Logout error:", error);
       toast.error("Logout failed");
+    } finally {
+      setIsLoggingOut(false);
     }
   };
 
@@ -139,14 +144,6 @@ const MainHome = () => {
       loan.loanAmount.includes(searchTerm) ||
       loan.loanStatus.toLowerCase().includes(searchTerm.toLowerCase())
   );
-
-  useEffect(() => {
-    if (showDropdown) {
-      const handleClickOutside = () => setShowDropdown(false);
-      document.addEventListener("click", handleClickOutside);
-      return () => document.removeEventListener("click", handleClickOutside);
-    }
-  }, [showDropdown]);
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -186,34 +183,28 @@ const MainHome = () => {
             <div className="flex items-center space-x-4">
               <Bell className="h-5 w-5 text-[#1A4D2E] cursor-pointer" />
               <MessageSquare className="h-5 w-5 text-[#1A4D2E] cursor-pointer" />
-              <div className="relative">
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setShowDropdown(!showDropdown);
-                  }}
-                  className="focus:outline-none"
-                >
-                  <User className="h-5 w-5 text-[#1A4D2E] cursor-pointer" />
-                </button>
-                {showDropdown && (
-                  <div className="absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-10">
-                    <div className="py-1">
-                      <button
-                        onClick={handleLogout}
-                        className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                      >
-                        Logout
-                      </button>
-                    </div>
-                  </div>
+              <User className="h-5 w-5 text-[#1A4D2E] cursor-pointer" />
+
+              <button
+                onClick={handleLogout}
+                disabled={isLoggingOut}
+                className="bg-[#1A4D2E] text-white px-3 py-1.5 rounded-md hover:bg-[#153d25] transition-colors text-sm flex items-center space-x-2 disabled:opacity-50"
+              >
+                {isLoggingOut ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    <span>Logging out...</span>
+                  </>
+                ) : (
+                  <span>Logout</span>
                 )}
-              </div>
+              </button>
             </div>
           </div>
         </div>
       </nav>
 
+      {/* Rest of the component remains the same as in the previous version */}
       <div className="max-w-6xl mx-auto px-4 py-4">
         <div className="bg-white rounded-lg shadow p-4 mb-4">
           <div className="flex justify-between items-center">
@@ -357,7 +348,7 @@ const MainHome = () => {
       <ApplyLoanModal
         isOpen={isApplyLoanModalOpen}
         onClose={() => setIsApplyLoanModalOpen(false)}
-        onLoanApplied={loadLoans} // Add this callback to refresh loans
+        onLoanApplied={loadLoans}
       />
 
       {/* Loan Details Modal */}
@@ -374,7 +365,6 @@ const MainHome = () => {
                 <p className="mt-1">{selectedLoan.fullName}</p>
               </div>
               <div>
-                <p className="text-sm font-medium text-gray-500">Loan Amount</p>
                 <p className="mt-1">{formatToINR(selectedLoan.loanAmount)}</p>
               </div>
               <div>
