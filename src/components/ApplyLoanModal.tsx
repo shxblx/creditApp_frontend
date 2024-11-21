@@ -125,7 +125,6 @@ const ApplyLoanModal: React.FC<ApplyLoanModalProps> = ({
       return;
     }
 
-    // Disable form submission and show loading state
     setIsLoading(true);
 
     try {

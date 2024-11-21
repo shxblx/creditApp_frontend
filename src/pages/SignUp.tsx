@@ -69,9 +69,9 @@ const SignUp = () => {
           })
         );
         navigate("/mainhome");
-        toast.success(response.data);
+        toast.success(response.data.message);
       } else {
-        toast.error(response.data);
+        toast.error(response.data.message);
       }
     } catch (error) {
       toast.error("An error occurred during sign up");
