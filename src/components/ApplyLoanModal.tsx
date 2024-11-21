@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { X, AlertCircle } from "lucide-react";
+import { X, AlertCircle, Loader2 } from "lucide-react";
 
 import toast from "react-hot-toast";
 import { getLoan } from "@/api/user";
@@ -18,6 +18,7 @@ const ApplyLoanModal: React.FC<ApplyLoanModalProps> = ({
   onLoanApplied,
 }) => {
   const userInfo = useSelector((state: RootState) => state.userInfo.userInfo);
+  const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({
     userId: userInfo.userId,
     fullName: "",
@@ -33,14 +34,18 @@ const ApplyLoanModal: React.FC<ApplyLoanModalProps> = ({
 
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
+      if (e.key === "Escape" && !isLoading) {
         onClose();
       }
     };
 
     const handleClickOutside = (e: MouseEvent) => {
       const modalContent = document.getElementById("loan-modal-content");
-      if (modalContent && !modalContent.contains(e.target as Node)) {
+      if (
+        modalContent &&
+        !modalContent.contains(e.target as Node) &&
+        !isLoading
+      ) {
         onClose();
       }
     };
@@ -54,7 +59,7 @@ const ApplyLoanModal: React.FC<ApplyLoanModalProps> = ({
       document.removeEventListener("keydown", handleEscape);
       document.removeEventListener("mousedown", handleClickOutside);
     };
-  }, [isOpen, onClose]);
+  }, [isOpen, onClose, isLoading]);
 
   const handleChange = (
     e: React.ChangeEvent<
@@ -120,6 +125,9 @@ const ApplyLoanModal: React.FC<ApplyLoanModalProps> = ({
       return;
     }
 
+    // Disable form submission and show loading state
+    setIsLoading(true);
+
     try {
       const response = await getLoan(formData);
       if (response.status === 200) {
@@ -127,13 +135,16 @@ const ApplyLoanModal: React.FC<ApplyLoanModalProps> = ({
         if (onLoanApplied) {
           onLoanApplied();
         }
+        onClose();
       } else {
         toast.error(response.data.message);
       }
-      onClose();
     } catch (error) {
       toast.error("Failed to submit loan application");
       console.error(error);
+    } finally {
+      // Re-enable form submission
+      setIsLoading(false);
     }
   };
 
@@ -151,7 +162,8 @@ const ApplyLoanModal: React.FC<ApplyLoanModalProps> = ({
           </h2>
           <button
             onClick={onClose}
-            className="text-gray-500 hover:text-gray-700"
+            disabled={isLoading}
+            className="text-gray-500 hover:text-gray-700 disabled:opacity-50"
           >
             <X className="h-6 w-6" />
           </button>
@@ -170,7 +182,8 @@ const ApplyLoanModal: React.FC<ApplyLoanModalProps> = ({
                   name="fullName"
                   value={formData.fullName}
                   onChange={handleChange}
-                  className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-[#1A4D2E] focus:border-[#1A4D2E]"
+                  disabled={isLoading}
+                  className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-[#1A4D2E] focus:border-[#1A4D2E] disabled:opacity-50 disabled:cursor-not-allowed"
                 />
                 {errors.fullName && (
                   <p className="text-red-500 text-xs mt-1">{errors.fullName}</p>
@@ -185,7 +198,8 @@ const ApplyLoanModal: React.FC<ApplyLoanModalProps> = ({
                   name="loanTenure"
                   value={formData.loanTenure}
                   onChange={handleChange}
-                  className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-[#1A4D2E] focus:border-[#1A4D2E]"
+                  disabled={isLoading}
+                  className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-[#1A4D2E] focus:border-[#1A4D2E] disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <option value="">Select Loan Tenure</option>
                   <option value="3">3 Months</option>
@@ -210,8 +224,9 @@ const ApplyLoanModal: React.FC<ApplyLoanModalProps> = ({
                   name="reasonForLoan"
                   value={formData.reasonForLoan}
                   onChange={handleChange}
+                  disabled={isLoading}
                   rows={3}
-                  className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-[#1A4D2E] focus:border-[#1A4D2E]"
+                  className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-[#1A4D2E] focus:border-[#1A4D2E] disabled:opacity-50 disabled:cursor-not-allowed"
                 />
                 {errors.reasonForLoan && (
                   <p className="text-red-500 text-xs mt-1">
@@ -232,8 +247,9 @@ const ApplyLoanModal: React.FC<ApplyLoanModalProps> = ({
                   name="loanAmount"
                   value={formData.loanAmount}
                   onChange={handleChange}
+                  disabled={isLoading}
                   min="1000"
-                  className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-[#1A4D2E] focus:border-[#1A4D2E]"
+                  className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-[#1A4D2E] focus:border-[#1A4D2E] disabled:opacity-50 disabled:cursor-not-allowed"
                 />
                 {errors.loanAmount && (
                   <p className="text-red-500 text-xs mt-1">
@@ -249,7 +265,8 @@ const ApplyLoanModal: React.FC<ApplyLoanModalProps> = ({
                   name="employmentStatus"
                   value={formData.employmentStatus}
                   onChange={handleChange}
-                  className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-[#1A4D2E] focus:border-[#1A4D2E]"
+                  disabled={isLoading}
+                  className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-[#1A4D2E] focus:border-[#1A4D2E] disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <option value="">Select Employment Status</option>
                   <option value="employed">Employed</option>
@@ -273,8 +290,9 @@ const ApplyLoanModal: React.FC<ApplyLoanModalProps> = ({
                   name="employmentAddress"
                   value={formData.employmentAddress}
                   onChange={handleChange}
+                  disabled={isLoading}
                   rows={3}
-                  className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-[#1A4D2E] focus:border-[#1A4D2E]"
+                  className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-[#1A4D2E] focus:border-[#1A4D2E] disabled:opacity-50 disabled:cursor-not-allowed"
                 />
                 {errors.employmentAddress && (
                   <p className="text-red-500 text-xs mt-1">
@@ -293,7 +311,8 @@ const ApplyLoanModal: React.FC<ApplyLoanModalProps> = ({
                 name="termsAccepted"
                 checked={formData.termsAccepted}
                 onChange={handleChange}
-                className="h-4 w-4 text-[#1A4D2E] focus:ring-[#1A4D2E] border-gray-300 rounded"
+                disabled={isLoading}
+                className="h-4 w-4 text-[#1A4D2E] focus:ring-[#1A4D2E] border-gray-300 rounded disabled:opacity-50 disabled:cursor-not-allowed"
               />
               <label className="ml-2 block text-sm text-gray-900">
                 I have read the important information and accept that by
@@ -306,7 +325,8 @@ const ApplyLoanModal: React.FC<ApplyLoanModalProps> = ({
                 name="creditInfoConsent"
                 checked={formData.creditInfoConsent}
                 onChange={handleChange}
-                className="h-4 w-4 text-[#1A4D2E] focus:ring-[#1A4D2E] border-gray-300 rounded"
+                disabled={isLoading}
+                className="h-4 w-4 text-[#1A4D2E] focus:ring-[#1A4D2E] border-gray-300 rounded disabled:opacity-50 disabled:cursor-not-allowed"
               />
               <label className="ml-2 block text-sm text-gray-900">
                 Any personal and credit information obtained may be disclosed
@@ -327,15 +347,24 @@ const ApplyLoanModal: React.FC<ApplyLoanModalProps> = ({
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 transition-colors"
+              disabled={isLoading}
+              className="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Cancel
             </button>
             <button
               type="submit"
-              className="px-4 py-2 bg-[#1A4D2E] text-white rounded-md hover:bg-[#153d25] transition-colors"
+              disabled={isLoading}
+              className="px-4 py-2 bg-[#1A4D2E] text-white rounded-md hover:bg-[#153d25] transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center min-w-[150px]"
             >
-              Submit Application
+              {isLoading ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Submitting...
+                </>
+              ) : (
+                "Submit Application"
+              )}
             </button>
           </div>
         </form>
