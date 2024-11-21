@@ -40,7 +40,8 @@ interface SidebarItem {
 
 const NavbarSidebar: React.FC<NavbarSidebarProps> = ({ children }) => {
   const [isSidebarOpen, setSidebarOpen] = useState<boolean>(true);
-  const [isProfileDropdownOpen, setProfileDropdownOpen] = useState<boolean>(false);
+  const [isProfileDropdownOpen, setProfileDropdownOpen] =
+    useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const location = useLocation();
   const navigate = useNavigate();
@@ -50,16 +51,36 @@ const NavbarSidebar: React.FC<NavbarSidebarProps> = ({ children }) => {
     { icon: <Users size={20} />, text: "Borrowers", path: "/dashboard" },
     { icon: <DollarSign size={20} />, text: "Loans", path: "/dashboard" },
     { icon: <RefreshCw size={20} />, text: "Repayments", path: "/dashboard" },
-    { icon: <Settings size={20} />, text: "Loan Parameters", path: "/dashboard" },
+    {
+      icon: <Settings size={20} />,
+      text: "Loan Parameters",
+      path: "/dashboard",
+    },
     { icon: <DollarSign size={20} />, text: "Accounting", path: "/dashboard" },
     { icon: <Shield size={20} />, text: "Collateral", path: "/dashboard" },
-    { icon: <Key size={20} />, text: "Access Configuration", path: "/dashboard" },
+    {
+      icon: <Key size={20} />,
+      text: "Access Configuration",
+      path: "/dashboard",
+    },
     { icon: <PiggyBank size={20} />, text: "Savings", path: "/dashboard" },
-    { icon: <Briefcase size={20} />, text: "Other Incomes", path: "/dashboard" },
+    {
+      icon: <Briefcase size={20} />,
+      text: "Other Incomes",
+      path: "/dashboard",
+    },
     { icon: <Receipt size={20} />, text: "Payroll", path: "/dashboard" },
-    { icon: <CircleDollarSign size={20} />, text: "Expenses", path: "/dashboard" },
+    {
+      icon: <CircleDollarSign size={20} />,
+      text: "Expenses",
+      path: "/dashboard",
+    },
     { icon: <FileText size={20} />, text: "E-Signature", path: "/dashboard" },
-    { icon: <DollarSign size={20} />, text: "Member Accounts", path: "/dashboard" },
+    {
+      icon: <DollarSign size={20} />,
+      text: "Member Accounts",
+      path: "/dashboard",
+    },
     { icon: <Calendar size={20} />, text: "Calendar", path: "/dashboard" },
     { icon: <Settings size={20} />, text: "Settings", path: "/dashboard" },
   ];
@@ -164,27 +185,27 @@ const NavbarSidebar: React.FC<NavbarSidebarProps> = ({ children }) => {
 
               {isProfileDropdownOpen && (
                 <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50">
-                  <div className="px-4 py-2 text-gray-700">
-                    <div className="flex items-center">
-                      {isLoading ? (
-                        <div className="flex items-center">
-                          <Loader2 size={16} className="mr-2 animate-spin" />
-                          <span>Logging out...</span>
-                        </div>
-                      ) : (
-                        <button
-                          onClick={handleLogout}
-                          className="flex items-center w-full text-gray-700 hover:bg-gray-100"
-                        >
-                          <LogOut size={16} className="mr-2" />
-                          <span>Logout</span>
-                        </button>
-                      )}
-                    </div>
-                  </div>
+                  <button
+                    className="block w-full text-left px-4 py-2 text-gray-700 hover:bg-gray-100"
+                    onClick={() => {}}
+                  >
+                    Profile
+                  </button>
                 </div>
               )}
             </div>
+            <button
+              onClick={handleLogout}
+              disabled={isLoading}
+              className="flex items-center space-x-2 hover:bg-gray-100 px-3 py-2 rounded-lg transition-colors"
+            >
+              {isLoading ? (
+                <Loader2 size={20} className="animate-spin" />
+              ) : (
+                <LogOut size={20} />
+              )}
+              {isLoading ? <span>Logging out...</span> : <span>Logout</span>}
+            </button>
           </div>
         </header>
 
